@@ -1,5 +1,10 @@
 # DKU
 ## AI 특론
+- revision에서 수정된 사항
+  - 기존의 Group Batch Normalization이 아닌 Ghost Batch Normalization 코드 작성(Tabnet_TF_2의 11번, 12번 block)
+   - 수정 이유 : 기존에는 논문에서 사용한 Ghost Batch Normalization이 아닌 많이 사용되었던 Group Batch Normalization을 이용하여 구성을 하였지만,
+              이번에 논문의 알고리즘을 그대로 적용해보고자 pytorch 코드를 tensorflow 코드로 구현
+   - 수정 결과 : Tensorflow에서 아직은 Ghost Batch Normalization의 내부 연산으 일부 기능이 지원되지 않아서 모델 학습 시 에러 발생
 
 ### 모형 설명
 - TabNet
@@ -106,6 +111,8 @@ class TransformBlock(tf.keras.Model):
             self.bn = tf.keras.layers.BatchNormalization(axis=-1, momentum=momentum,
                                                          virtual_batch_size=virtual_batch_size,
                                                          name=f'transformblock_bn_{block_name}')
+        elif norm_type == "ghost":
+            self.bn = GhostBatchNormalization(virtual_divider=virtual_batch_size, momentum=momentum)
 
         else:
             self.bn = GroupNormalization(axis=-1, groups=self.groups, name=f'transformblock_gn_{block_name}')
@@ -620,7 +627,7 @@ model = TabNetClassifier(feature_columns, num_classes=3,
                         feature_dim=8, output_dim=4,
                         num_decision_steps=4, relaxation_factor=1.0,
                         sparsity_coefficient=1e-5, batch_momentum=0.98,
-                        virtual_batch_size=None, norm_type='group',
+                        virtual_batch_size=None, norm_type='ghost',
                         num_groups=1)
 
 lr = tf.keras.optimizers.schedules.ExponentialDecay(0.01, decay_steps=100, decay_rate=0.9, staircase=False)
